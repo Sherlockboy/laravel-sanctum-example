@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -10,29 +12,26 @@ class AuthController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-
+        if (Auth::attempt($credentials))
+        {
             return response()->json([
                 'message' => 'Successfully logged in!',
-                'code' => 200,
                 'user' => auth()->user(),
-                'token' => auth()->user()->createToken('auth-token')
-            ]);
+                'token' => auth()->user()->createToken('auth-token')->plainTextToken
+            ], 200);
         }
 
         return response()->json([
-            'message' => 'Failure! User not found.',
-            'code' => 404
-        ]);
+            'message' => 'Failure! User not found.'
+        ], 404);
     }
 
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required',
-            'email' => 'required|email',
-            'password' => 'required'
+            'name' => 'required|string',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|confirmed'
         ]);
 
         $user = User::create([
@@ -41,29 +40,24 @@ class AuthController extends Controller
             'password' => bcrypt($validated['password'])
         ]);
 
-        auth()->login($user);
-
         return response()->json([
             'message' => 'Successfully registered!',
-            'code' => 201,
             'user' => $user,
-            'token' => $user->createToken('auth-token')
-        ]);
+            'token' => $user->createToken('auth-token')->plainTextToken
+        ], 201);
     }
 
+    public function user()
+    {
+        return response()->json(auth()->user(), 200);
+    }
+    
     public function logout(Request $request)
     {
         auth()->user()->tokens()->delete();
-
-        auth()->logout();
-
-        $request->session()->invalidate();
-
-        $request->session()->regenerateToken();  
         
         return response()->json([
-            'message' => 'Successfully logged out!',
-            'code' => 200
-        ]);
+            'message' => 'Successfully logged out!'
+        ], 200);
     }
 }

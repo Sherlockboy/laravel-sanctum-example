@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -9,12 +10,18 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------|
 */
 
-Route::prefix('auth')->middleware('guest')->group(function() {
+Route::prefix('auth')->group(function() {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
 });
 
 Route::middleware('auth:sanctum')->group(function() {
-    Route::get('user', [AuthController::class, 'user']);
-    Route::post('auth/logout', [AuthController::class, 'logout']);
+    Route::prefix('auth')->group(function() {
+        Route::get('user', [AuthController::class, 'user']);
+        Route::post('logout', [AuthController::class, 'logout']);
+    });
+
+    Route::apiResources([
+        'users' => UserController::class
+    ]);
 });
